@@ -11,6 +11,7 @@ using Microsoft.TeamFoundation.WorkItemTracking.Client;
 using Migration.Common;
 using Migration.Common.Config;
 using Migration.Common.Log;
+using Migration.WIContract;
 
 namespace WorkItemImport
 {
@@ -109,6 +110,7 @@ namespace WorkItemImport
                 revisionCount = plan.ReferenceQueue.Count;
 
                 BeginSession(configFileName, config, forceFresh, agent, itemCount, revisionCount);
+                var retryForLinks = new List<ExecutionPlan.ExecutionItem>();
 
                 while (plan.TryPop(out ExecutionPlan.ExecutionItem executionItem))
                 {
@@ -126,7 +128,11 @@ namespace WorkItemImport
 
                         Logger.Log(LogLevel.Info, $"Processing {importedItems + 1}/{revisionCount} - wi '{(wi.Id > 0 ? wi.Id.ToString() : "Initial revision")}', jira '{executionItem.OriginId}, rev {executionItem.Revision.Index}'.");
 
-                        agent.ImportRevision(executionItem.Revision, wi);
+                        if (agent.ImportRevision(executionItem.Revision, wi))
+                        {
+                            executionItem.WiId = wi.Id;
+                            retryForLinks.Add(executionItem);
+                        }
                         importedItems++;
                     }
                     catch (AbortMigrationException)
@@ -146,6 +152,42 @@ namespace WorkItemImport
                         }
                     }
                 }
+
+                // Retry the failed links
+                retryForLinks.ForEach((executionItem) =>
+                {
+
+                    try
+                    {
+                        WorkItem wi = null;
+
+                        if (executionItem.WiId > 0)
+                            wi = agent.GetWorkItem(executionItem.WiId);
+                        else
+                            wi = agent.CreateWI(executionItem.WiType);
+
+                        Logger.Log(LogLevel.Info, $"RETRY FOR LINK: Processing {importedItems + 1}/{revisionCount} - wi '{(wi.Id > 0 ? wi.Id.ToString() : "Initial revision")}', jira '{executionItem.OriginId}, rev {executionItem.Revision.Index}'.");
+
+                        agent.RetryLinkImportRevision(executionItem.Revision, wi);
+                    }
+                    catch (AbortMigrationException)
+                    {
+                        Logger.Log(LogLevel.Info, "Aborting migration...");
+                    }
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            Logger.Log(ex, $"Failed to import '{executionItem.ToString()}'.");
+                        }
+                        catch (AbortMigrationException)
+                        {
+                        }
+                    }
+                }
+                                );
+
+
             }
             catch (CommandParsingException e)
             {

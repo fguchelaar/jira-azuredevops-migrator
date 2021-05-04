@@ -550,7 +550,7 @@ namespace WorkItemImport
         {
             bool success = true;
 
-            if (!wi.IsOpen)
+            if (!wi.IsOpen && !wi.IsPartialOpen)
                 wi.Open();
 
 
@@ -728,6 +728,10 @@ namespace WorkItemImport
                 if (exceedsLinkLimit)
                     SaveWorkItem(rev, newWorkItem);
             }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         private bool RemoveLinksFromWiThatExceedsLimit(WorkItem newWorkItem)
@@ -884,6 +888,7 @@ namespace WorkItemImport
 
         public bool ImportRevision(WiRevision rev, WorkItem wi)
         {
+            var retryLink = false;
             var incomplete = false;
             try
             {
@@ -903,7 +908,10 @@ namespace WorkItemImport
                     incomplete = true;
 
                 if (rev.Links.Any() && !ApplyLinks(rev, wi))
+                {
                     incomplete = true;
+                    retryLink = true;
+                }
 
                 if (incomplete)
                     Logger.Log(LogLevel.Warning, $"'{rev.ToString()}' - not all changes were saved.");
@@ -948,7 +956,7 @@ namespace WorkItemImport
 
                 wi.Close();
 
-                return true;
+                return retryLink;
             }
             catch (AbortMigrationException)
             {
@@ -958,6 +966,45 @@ namespace WorkItemImport
             {
                 Logger.Log(ex, $"Failed to import revisions for '{wi.Id}'.");
                 return false;
+            }
+        }
+
+
+        public void RetryLinkImportRevision(WiRevision rev, WorkItem wi)
+        {
+            try
+            {
+                if (!wi.IsOpen || !wi.IsPartialOpen)
+                    wi.PartialOpen();
+
+                var authorField = rev.Fields.Where((field) =>
+                {
+                    return field.ReferenceName == WiFieldReference.CreatedBy;
+                });
+                UpdateWIFields(authorField, wi);
+
+                bool applied = ApplyLinks(rev, wi);
+
+                if (!applied)
+                {
+                    Logger.Log(LogLevel.Warning, $"RETRY LINKS FAILED: '{rev.ToString()}' - not all changes were saved.");
+
+                } else
+                {
+                    SaveWorkItem(rev, wi);
+
+                    Logger.Log(LogLevel.Debug, $"RETRY LINKS: Imported revision.");
+                }
+
+                wi.Close();
+            }
+            catch (AbortMigrationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex, $"RETRY LINKS: Failed to import revisions for '{wi.Id}'.");
             }
         }
 
