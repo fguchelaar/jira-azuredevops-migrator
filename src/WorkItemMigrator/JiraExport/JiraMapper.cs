@@ -346,6 +346,9 @@ namespace JiraExport
                             case "MapSprint":
                                 value = IfChanged<string>(item.Source, isCustomField, MapSprint);
                                 break;
+                            case "MapComponent":
+                                value = IfChanged<string>(item.Source, isCustomField, MapComponent);
+                                break;
                             case "MapTags":
                                 value = IfChanged<string>(item.Source, isCustomField, MapTags);
                                 break;
@@ -567,6 +570,22 @@ namespace JiraExport
             else
                 return string.Join(";", values);
         }
+
+        private object MapComponent(string areaPathsString)
+        {
+            if (string.IsNullOrWhiteSpace(areaPathsString))
+                return null;
+
+            var areaPaths = areaPathsString.Split(';').AsEnumerable();
+            areaPaths = areaPaths.Select(ip => ip.Trim());
+
+            var areaPath = areaPaths.Last();
+            areaPath = areaPath
+                .Replace("/", "-")
+                .Replace("&", " en ");
+
+            return areaPath;
+       }
 
         private object MapSprint(string iterationPathsString)
         {
