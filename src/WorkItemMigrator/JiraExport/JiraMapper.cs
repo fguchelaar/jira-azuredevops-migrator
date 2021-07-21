@@ -582,10 +582,11 @@ namespace JiraExport
             var areaPath = areaPaths.Last();
             areaPath = areaPath
                 .Replace("/", "-")
-                .Replace("&", " en ");
+                .Replace("&", " en ")
+                .Replace(":", " ");
 
             return areaPath;
-       }
+        }
 
         private object MapSprint(string iterationPathsString)
         {
@@ -593,7 +594,14 @@ namespace JiraExport
                 return null;
 
             var iterationPaths = iterationPathsString.Split(',').AsEnumerable();
-            iterationPaths = iterationPaths.Select(ip => ip.Trim());
+            iterationPaths = iterationPaths.Select(
+                ip => ip
+                    .Replace("\\", "-")
+                    .Replace("/", "-")
+                    .Replace("&", " en ")
+                    .Replace(":", " ")
+                    .Trim()
+            );
 
             var iterationPath = iterationPaths.Last();
 
