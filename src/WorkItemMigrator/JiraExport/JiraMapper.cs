@@ -323,7 +323,8 @@ namespace JiraExport
             {
                 if (item.Source != null)
                 {
-                    var isCustomField = item.SourceType == "name";
+                    var isCustomField = item.SourceType == "name" || (item.SourceType == "id" && item.Source.StartsWith("customfield"));
+
                     Func<JiraRevision, (bool, object)> value;
 
                     if (item.Mapping?.Values != null)
@@ -441,7 +442,7 @@ namespace JiraExport
 
         private Func<JiraRevision, (bool, object)> IfChanged<T>(string sourceField, bool isCustomField, Func<T, object> mapperFunc = null)
         {
-            if (isCustomField)
+            if (isCustomField && !sourceField.StartsWith("customfield"))
             {
                 var customFieldName = _jiraProvider.GetCustomId(sourceField);
                 sourceField = customFieldName;
@@ -596,10 +597,19 @@ namespace JiraExport
             var iterationPaths = iterationPathsString.Split(',').AsEnumerable();
             iterationPaths = iterationPaths.Select(
                 ip => ip
+                    .Replace("/", "-")
                     .Replace("\\", "-")
                     .Replace("/", "-")
                     .Replace("&", " en ")
                     .Replace(":", " ")
+                    .Replace("#", "")
+                    .Replace("+", " ")
+                    .Replace("|", " ")
+                    .Replace("\"", "'")
+                    .Replace("?", " ")
+                    .Replace("<", "(")
+                    .Replace(">", ")")
+                    .Replace("$", "")
                     .Trim()
             );
 

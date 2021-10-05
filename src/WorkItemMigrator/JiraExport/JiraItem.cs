@@ -369,6 +369,16 @@ namespace JiraExport
                     value = string.Join(";", prop.Value.Select(st => st.ExValue<string>("$.name")).ToList());
                     if ((string)value == ";" || (string)value == "")
                         value = string.Join(";", prop.Value.Select(st => st.ExValue<string>("$.value")).ToList());
+
+                    // Added to grab 'raw' string arrays. Surrounded with try catch to prevent other types from getting data
+                    try
+                    {
+                        if ((string)value == ";" || (string)value == "")
+                            value = string.Join(";", prop.Value.Select(st => st.Value<string>()).ToList());
+                    } catch
+                    {
+
+                    }
                 }
                 else if (type == Newtonsoft.Json.Linq.JTokenType.Object && prop.Value["value"] != null)
                 {
