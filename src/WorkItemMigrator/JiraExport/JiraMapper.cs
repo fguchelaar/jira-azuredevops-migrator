@@ -356,6 +356,9 @@ namespace JiraExport
                             case "MapArray":
                                 value = IfChanged<string>(item.Source, isCustomField, MapArray);
                                 break;
+                            case "MapArrayWithSemicolon":
+                                value = IfChanged<string>(item.Source, isCustomField, MapArrayWithSemicolon);
+                                break;
                             case "MapRemainingWork":
                                 value = IfChanged<string>(item.Source, isCustomField, MapRemainingWork);
                                 break;
@@ -570,6 +573,18 @@ namespace JiraExport
                 return null;
             else
                 return string.Join(";", values);
+        }
+
+        private object MapArrayWithSemicolon(string field)
+        {
+            if (string.IsNullOrWhiteSpace(field))
+                return null;
+
+            var values = field.Split(';');
+            if (!values.Any())
+                return null;
+            else
+                return string.Join(";", values.Select(ip => ip.Trim()));
         }
 
         private object MapComponent(string areaPathsString)
