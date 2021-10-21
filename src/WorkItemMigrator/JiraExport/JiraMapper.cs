@@ -225,7 +225,8 @@ namespace JiraExport
             if (r.Fields.TryGetValue(field, out object value))
             {
                 var parentKeyStr = r.OriginId.Substring(r.OriginId.LastIndexOf("-", StringComparison.InvariantCultureIgnoreCase) + 1);
-                var childKeyStr = value?.ToString().Substring(r.OriginId.LastIndexOf("-", StringComparison.InvariantCultureIgnoreCase) + 1);
+                var childValue = value?.ToString() ?? "";
+                var childKeyStr = childValue.Substring(childValue.LastIndexOf("-", StringComparison.InvariantCultureIgnoreCase) + 1);
 
                 if (int.TryParse(parentKeyStr, out var parentKey) && int.TryParse(childKeyStr, out var childKey))
                 {
