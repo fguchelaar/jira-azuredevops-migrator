@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 using Common.Config;
 
 using Migration.Common;
@@ -285,7 +287,7 @@ namespace JiraExport
                                 fields.Add(new WiField()
                                 {
                                     ReferenceName = fieldreference,
-                                    Value = value
+                                    Value = value is string ? StripKnownNonAscii((string)value) : value
                                 });
                             }
                         }
@@ -475,6 +477,13 @@ namespace JiraExport
             };
         }
 
+        public static string StripKnownNonAscii(string text)
+        {
+            return text
+                .Replace("\u000b", "")
+                .Replace("\u001c", "");
+        }
+
         private (bool, object) MapTitle(JiraRevision r)
         {
             if (r.Fields.TryGetValue("summary", out object summary))
@@ -510,7 +519,7 @@ namespace JiraExport
                         return (true, mappedValue);
                     }
                 }
-                return (true, value);
+                return (true, value is string ? StripKnownNonAscii((string)value) : value);
             }
             else
             {

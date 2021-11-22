@@ -91,7 +91,8 @@ namespace WorkItemImport
                     BaseAreaPath = config.BaseAreaPath ?? string.Empty, // Root area path that will prefix area path of each migrated item
                     BaseIterationPath = config.BaseIterationPath ?? string.Empty, // Root iteration path that will prefix each iteration
                     IgnoreFailedLinks = config.IgnoreFailedLinks,
-                    ProcessTemplate = config.ProcessTemplate
+                    ProcessTemplate = config.ProcessTemplate,
+                    PrefixIterationPath = config.PrefixIterationPath
                 };
 
                 // initialize Azure DevOps/TFS connection. Creates/fetches project, fills area and iteration caches.

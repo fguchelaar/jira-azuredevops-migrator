@@ -379,6 +379,24 @@ namespace WorkItemImport
             if (!wi.IsOpen || !wi.IsPartialOpen)
                 wi.PartialOpen();
 
+            // Hack om IterationPath te prefixen met de area
+            string iterationPathPrefix = string.Empty;
+            if (Settings.PrefixIterationPath)
+            {
+                var areaField = fields.FirstOrDefault(f => string.Equals(WiFieldReference.AreaPath, f.ReferenceName, StringComparison.InvariantCultureIgnoreCase));
+
+                if (areaField != null)
+                {
+                    if (!string.IsNullOrEmpty((string)areaField.Value))
+                    {
+                        iterationPathPrefix = (string)areaField.Value;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(wi.NodeName))
+                {
+                    iterationPathPrefix = wi.NodeName;
+                }
+            }
             foreach (var fieldRev in fields)
             {
                 try
@@ -391,7 +409,9 @@ namespace WorkItemImport
                     {
                         case var s when s.Equals(WiFieldReference.IterationPath, StringComparison.InvariantCultureIgnoreCase):
 
-                            var iterationPath = Settings.BaseIterationPath;
+                            var iterationPath = Settings.PrefixIterationPath
+                                ? string.Join("/", Settings.BaseIterationPath, iterationPathPrefix)
+                                : Settings.BaseIterationPath;
 
                             if (!string.IsNullOrWhiteSpace((string)fieldValue))
                             {

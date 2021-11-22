@@ -45,6 +45,9 @@ namespace Common.Config
         [JsonProperty(PropertyName = "base-iteration-path")]
         public string BaseIterationPath { get; set; } = "";
 
+        [JsonProperty(PropertyName = "prefix-iteration-path")]
+        public bool PrefixIterationPath { get; set; } = false;
+
         [JsonProperty(PropertyName = "ignore-failed-links")]
         public bool IgnoreFailedLinks { get; set; } = false;
 
